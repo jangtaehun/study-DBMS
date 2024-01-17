@@ -556,12 +556,118 @@ values (5, 3);
 
 select * from tbl_apply;
 
-/*매미 체험학습에 신청한 아이의 전체 정보*/
-/*1. 서브쿼리만 사용*/
+
+
+/*매미 체험 학습에 신청한 아이의 전체 정보*/
+/*1. 서브 쿼리만 사용*/
+select c.* from tbl_child c where c.id in
+(
+    select child_id from tbl_apply where field_trip_id in
+    (
+        select id from tbl_field_trip where title like '%매미%'
+    )
+);
+/*
+select id from tbl_field_trip where title like '%매미%' => id = 1
+select child_id from tbl_apply where field_trip_id  => field_trip_id = 1인 child_id만 고른다.
+select * from tbl_child c where c.id => 아이들의 모든 정보
+    => child_id가 1인 id만 고른다.
+ */
+
 /*2. join만 사용*/
+select c.* from tbl_child c join tbl_apply a
+on c.id = a.child_id
+join tbl_field_trip f on f.title like '%매미%' and a.field_trip_id = f.id;
+/*
+ 1명의 아이는 여러 체험 학습 신청 가능 -> child에 aplly를 join
+ child의 id와 child_id가 같으며, 체험 학습 제목에 매미가 들어가고 apply의 field_trip_id와 field_trip의 id가 같은 것을 고른다.
+ */
+select * from tbl_apply a join tbl_field_trip t on t.title like '%매미%'
+and a.field_trip_id = t.id;
+select * from tbl_apply;
+select * from tbl_child;
+select * from tbl_field_trip;
+
 
 /*체험학습을 2개 이상 신청한 아이의 정보와 부모의 정보 모두 조회*/
+select c.*, p.* from tbl_parent p join tbl_child c on c.parent_id = p.id
+where c.id in
+(
+    select child_id from tbl_apply group by child_id having count(field_trip_id) >= 2
+);
+
+select * from tbl_child;
+select * from tbl_child c join tbl_apply a on c.id = a.child_id;
+
 
 /*참가자(지원자) 수가 가장 적은 체험학습의 제목과 내용 조회*/
+select ft.title, ft.content from tbl_field_trip ft
+join
+(
+    select a.field_trip_id, count(child_id) from tbl_apply a group by a.field_trip_id
+    having count(child_id) = (select min(a.cnt) from
+                        (
+                            select a.field_trip_id, count(*) as cnt
+                            from tbl_apply a
+                            group by a.field_trip_id
+                        ) as a
+                   )
+) as sub on ft.id = sub.field_trip_id;
+
+
+select * from tbl_field_trip f join tbl_apply a on f.id = a.field_trip_id;
+
+select a.field_trip_id, count(*) as cnt from tbl_apply a group by a.field_trip_id;
+
+select a.field_trip_id from tbl_field_trip f join tbl_apply a on f.id = a.field_trip_id
+group by a.field_trip_id order by count(*);
+
 
 /*평균 참가자(지원자) 수보다 적은 체험학습의 제목과 내용 조회*/
+/* total cost: */
+select ft.title, ft.content from tbl_field_trip ft
+join
+(
+    select a.field_trip_id, count(*) as cnt
+    from tbl_apply a
+    group by a.field_trip_id
+) as sub on ft.id = sub.field_trip_id
+where sub.cnt <
+    (
+    select avg(a.cnt2) from (select count(*) as cnt2 from tbl_apply group by field_trip_id) as a
+    );
+
+/*
+ 1 대 N -> 1이 선행하는 것이 성능이 더 좋다.
+ */
+
+select * from tbl_field_trip
+where id in (
+    select ft.id from tbl_apply a
+    right outer join tbl_field_trip ft
+    on a.field_trip_id = ft.id
+    group by ft.id
+    having count(child_id) < (
+    select floor(avg(ac.apply_count)) from (
+        select field_trip_id, count(child_id) apply_count from tbl_apply
+        group by field_trip_id) ac)
+);
+
+select u.user_id, count(p.id) from tbl_user u left outer join tbl_post p
+on u.id = p.user_id
+group by u.user_id;
+
+create view view_target_field_trip as
+    (select * from tbl_field_trip
+where id in (
+    select ft.id from tbl_apply a
+    right outer join tbl_field_trip ft
+    on a.field_trip_id = ft.id
+    group by ft.id
+    having count(child_id) < (
+    select floor(avg(ac.apply_count)) from (
+        select field_trip_id, count(child_id) apply_count from tbl_apply
+        group by field_trip_id) ac)
+));
+
+select * from view_target_field_trip;
