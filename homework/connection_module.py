@@ -4,7 +4,7 @@ from pymysql.cursors import Cursor
 
 # 원하는 MySQL 서버와 연동하는 함수
 def connect():
-    conn = pymysql.connect(host='43.202.60.100', user='mysql', password='1234', db='test', charset='utf8', autocommit=False)
+    conn = pymysql.connect(host='43.201.16.176', user='mysql', password='1234', db='test', charset='utf8', autocommit=False)
     cursor = conn.cursor(pymysql.cursors.DictCursor)
     return conn, cursor
 
@@ -14,6 +14,7 @@ def execute(crud):
     result = None
 
     def manage(*args):
+        print(f'args: {args}')
         nonlocal result
         # 연결객체와 커서객체를 받아온다.
         conn, cursor = connect()

@@ -225,6 +225,9 @@ group by name;
     6. order by
 */
 /*주문된 상품별 평균 가격 중 5000원 이상인 상품 조회*/
+select name, price from tbl_order;
+select name, sum(price) from tbl_order group by name;
+
 select name, round(avg(price), 0) average from tbl_order
 group by name
 having avg(price) >= 5000;

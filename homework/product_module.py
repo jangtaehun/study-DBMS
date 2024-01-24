@@ -12,6 +12,7 @@ def find_all(cursor: Cursor, query: str) -> list:
 @execute
 def find_by_id(cursor: Cursor, query: str, params: list) -> dict:
     cursor.execute(query, params)
+    print(cursor, query, params)
     return cursor.fetchone()
 
 @execute
